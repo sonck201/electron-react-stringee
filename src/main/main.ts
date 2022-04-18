@@ -16,6 +16,7 @@ import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import 'dotenv/config';
 
+// eslint-disable-next-line import/no-cycle
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -28,8 +29,6 @@ export default class AppUpdater {
 }
 
 const store = new Store();
-
-let mainWindow: BrowserWindow | null = null;
 
 // IPC listener
 ipcMain.on('ipc-example', async (event, arg) => {
@@ -70,7 +69,9 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
-const createWindow = async () => {
+const windows = new Set();
+
+export const createWindow = async () => {
   if (isDevelopment) {
     await installExtensions();
   }
@@ -83,10 +84,12 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
-  mainWindow = new BrowserWindow({
+  const windowWidth = 1024;
+  const windowHeight = 1024;
+  const windowOptions = {
     show: false,
-    width: 1024,
-    height: 1024,
+    width: windowWidth,
+    height: windowHeight,
     x: 1024,
     y: -1280,
     icon: getAssetPath('icon.png'),
@@ -95,30 +98,58 @@ const createWindow = async () => {
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
+  };
+
+  // mainWindow = new BrowserWindow(windowOptions);
+
+  const currentWindow = BrowserWindow.getFocusedWindow();
+  if (currentWindow) {
+    const [currentWindowX, currentWindowY] = currentWindow.getPosition();
+    windowOptions.x = currentWindowX + 24;
+    windowOptions.y = currentWindowY + 24;
+  }
+
+  let newWindow: BrowserWindow | null = new BrowserWindow(windowOptions);
+
+  newWindow.loadURL(resolveHtmlPath('index.html'));
+
+  newWindow.webContents.on('did-finish-load', () => {
+    if (!newWindow) {
+      throw new Error('"newWindow" is not defined');
+    }
+    if (process.env.START_MINIMIZED) {
+      newWindow.minimize();
+    } else {
+      newWindow.show();
+      newWindow.focus();
+    }
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
-
-  mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
+  newWindow.on('ready-to-show', () => {
+    if (!newWindow) {
       throw new Error('"mainWindow" is not defined');
     }
     if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
+      newWindow.minimize();
     } else {
-      mainWindow.show();
+      newWindow.show();
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  newWindow.on('closed', () => {
+    windows.delete(newWindow);
+    newWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
+  newWindow.on('focus', () => {
+    if (newWindow) {
+      const menuBuilder = new MenuBuilder(newWindow);
+      menuBuilder.buildMenu();
+    }
+  });
 
   // Open urls in the user's browser
-  mainWindow.webContents.setWindowOpenHandler((edata) => {
+  newWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
@@ -126,6 +157,10 @@ const createWindow = async () => {
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();
+
+  windows.add(newWindow);
+
+  return newWindow;
 };
 
 /**
@@ -147,7 +182,7 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
+      if (windows.size === 0) createWindow();
     });
   })
   .catch(console.log);
