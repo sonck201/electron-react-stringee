@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 
 import icon from '../../assets/icon.svg';
 
 const Hello = () => {
+  const [userId, setUserId] = useState(window.electron.ipcRenderer.userId);
+
   const versions = window.electron.ipcRenderer.versions();
 
   console.log(
@@ -18,7 +21,7 @@ const Hello = () => {
 
   client.on('authen', (res) => {
     console.log('authen', res);
-    // $('#loggedUserId').html(res.userId);
+    setUserId(res.userId);
   });
 
   client.on('disconnect', () => {
@@ -36,7 +39,7 @@ const Hello = () => {
   return (
     <>
       <div className="Hello">
-        <img width="200px" alt="icon" src={icon} />
+        <img width="100px" alt="icon" src={icon} />
       </div>
 
       <h1 className="font-bold text-3xl text-center my-10">
@@ -52,9 +55,26 @@ const Hello = () => {
         </button>
       </div>
 
-      <div className="text-center mt-5">
-        User ID: {window.electron.ipcRenderer.userId}
-      </div>
+      <div className="text-center mt-5">User ID: {userId}</div>
+
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th>Local video</th>
+            <th>Remote video</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div id="local_videos" className="h-[200px] w-[200px]" />
+            </td>
+            <td>
+              <div id="remote_videos" className="h-[200px] w-[200px]" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <div className="absolute bottom-0 left-0 w-full text-center">
         <span>
