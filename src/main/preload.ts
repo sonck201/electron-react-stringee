@@ -1,4 +1,9 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { v4 as uuidv4 } from 'uuid';
+
+import { getAccessToken } from '../libs/Stringee';
+
+const userId = uuidv4();
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
@@ -28,14 +33,18 @@ contextBridge.exposeInMainWorld('electron', {
     versions() {
       return process.versions;
     },
-    store: {
-      get<T extends string | number>(val: T): T {
-        return ipcRenderer.sendSync('electron-store-get', val);
-      },
-      set(property: string, val: string | number) {
-        ipcRenderer.send('electron-store-set', property, val);
-      },
-      // Other method you want to add like has(), reset(), etc.
+    userId,
+  },
+  store: {
+    get<T extends string | number>(val: T): T {
+      return ipcRenderer.sendSync('electron-store-get', val);
     },
+    set(property: string, val: string | number) {
+      ipcRenderer.send('electron-store-set', property, val);
+    },
+    // Other method you want to add like has(), reset(), etc.
+  },
+  stringeeEnv: {
+    accessToken: getAccessToken(userId),
   },
 });

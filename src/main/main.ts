@@ -14,6 +14,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
+import 'dotenv/config';
 
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -85,7 +86,9 @@ const createWindow = async () => {
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
-    height: 728,
+    height: 1024,
+    x: 1024,
+    y: -1280,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged

@@ -1,10 +1,37 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 
 import icon from '../../assets/icon.svg';
-import './App.css';
 
 const Hello = () => {
   const versions = window.electron.ipcRenderer.versions();
+
+  console.log(
+    `StringeeUtil.isWebRTCSupported: ${window.StringeeUtil.isWebRTCSupported()}`
+  );
+
+  const client = new window.StringeeClient();
+  client.connect(window.electron.stringeeEnv.accessToken);
+
+  client.on('connect', () => {
+    console.log('connected');
+  });
+
+  client.on('authen', (res) => {
+    console.log('authen', res);
+    // $('#loggedUserId').html(res.userId);
+  });
+
+  client.on('disconnect', () => {
+    console.log('disconnected');
+  });
+
+  client.on('requestnewtoken', () => {
+    console.log(
+      '++++++++++++++ requestnewtoken; please get new access_token from YourServer and call client.connect(new_access_token)+++++++++'
+    );
+    // please get new access_token from YourServer and call:
+    // client.connect(new_access_token);
+  });
 
   return (
     <>
@@ -23,6 +50,10 @@ const Hello = () => {
         <button type="button" className="m-3 btn-secondary">
           Join room
         </button>
+      </div>
+
+      <div className="text-center mt-5">
+        User ID: {window.electron.ipcRenderer.userId}
       </div>
 
       <div className="absolute bottom-0 left-0 w-full text-center">
