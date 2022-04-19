@@ -43,4 +43,8 @@ button:hover {
   .btn-secondary {
     @apply py-2 px-4 bg-gray-500 text-white font-normal rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75;
   }
+
+  .form-control {
+    @apply py-2 px-4 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-gray-600;
+  }
 }

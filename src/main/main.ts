@@ -10,7 +10,13 @@
  */
 import path from 'path';
 
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  BrowserWindowConstructorOptions,
+} from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
@@ -86,7 +92,7 @@ export const createWindow = async () => {
 
   const windowWidth = 1024;
   const windowHeight = 1024;
-  const windowOptions = {
+  const windowOptions: BrowserWindowConstructorOptions = {
     show: false,
     width: windowWidth,
     height: windowHeight,
@@ -99,6 +105,11 @@ export const createWindow = async () => {
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
   };
+
+  if (process.env.OS === 'Windows_NT') {
+    delete windowOptions.x;
+    delete windowOptions.y;
+  }
 
   // mainWindow = new BrowserWindow(windowOptions);
 

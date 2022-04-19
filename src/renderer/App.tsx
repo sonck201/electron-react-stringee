@@ -1,62 +1,82 @@
-import { useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 
 import icon from '../../assets/icon.svg';
+import type { StringeeAuthenResponse } from '../types/Stringee';
+import StringeeClientUtil from '../utils/Stringee';
 
 const Hello = () => {
+  const [msgAlert, setMsgAlert] = useState('');
   const [userId, setUserId] = useState(window.electron.ipcRenderer.userId);
+
+  const remoteUserId = useRef<HTMLInputElement>(null);
 
   const versions = window.electron.ipcRenderer.versions();
 
-  console.log(
-    `StringeeUtil.isWebRTCSupported: ${window.StringeeUtil.isWebRTCSupported()}`
-  );
+  if (!StringeeClientUtil.isWebRTCSupported()) {
+    return <>Your device does not support WebRTC</>;
+  }
 
-  const client = new window.StringeeClient();
-  client.connect(window.electron.stringeeEnv.accessToken);
-
-  client.on('connect', () => {
-    console.log('connected');
-  });
-
-  client.on('authen', (res) => {
+  const stringeeClient = StringeeClientUtil.getInstance();
+  stringeeClient.init();
+  stringeeClient.client.on('authen', (res: StringeeAuthenResponse) => {
     console.log('authen', res);
     setUserId(res.userId);
   });
 
-  client.on('disconnect', () => {
-    console.log('disconnected');
-  });
+  const onCallHandler = (formEvent: FormEvent) => {
+    formEvent.preventDefault();
 
-  client.on('requestnewtoken', () => {
-    console.log(
-      '++++++++++++++ requestnewtoken; please get new access_token from YourServer and call client.connect(new_access_token)+++++++++'
-    );
-    // please get new access_token from YourServer and call:
-    // client.connect(new_access_token);
-  });
+    setMsgAlert('');
+
+    if (!remoteUserId) {
+      setMsgAlert('Please input remote UUID for calling');
+    }
+
+    const remoteUserUuid = String(remoteUserId?.current?.value);
+
+    if (remoteUserUuid.length !== 36) {
+      setMsgAlert(`Invalid UUID - ${remoteUserUuid.length} chars length`);
+    }
+
+    if (remoteUserUuid === userId) {
+      setMsgAlert('Remote UUID can not be local UUID');
+    }
+
+    remoteUserId?.current?.focus();
+
+    setMsgAlert('Implementing call to remote ID');
+  };
 
   return (
     <>
       <div className="Hello">
         <img width="100px" alt="icon" src={icon} />
       </div>
-
       <h1 className="font-bold text-3xl text-center my-10">
         Electron - React - Stringee
       </h1>
-
-      <div className="flex items-center justify-center">
-        <button type="button" className="m-3 btn-primary">
-          Create room
+      {msgAlert && (
+        <div className="text-center shadow bg-slate-600 text-red-400">
+          {msgAlert}
+        </div>
+      )}
+      <form
+        className="flex items-center justify-center"
+        onSubmit={onCallHandler}
+      >
+        <input
+          className="form-control required:border-red-500"
+          placeholder="Input UUID for calling"
+          ref={remoteUserId}
+          type="text"
+          required
+        />
+        <button type="submit" className="m-3 btn-primary w-20">
+          Call
         </button>
-        <button type="button" className="m-3 btn-secondary">
-          Join room
-        </button>
-      </div>
-
+      </form>
       <div className="text-center mt-5">User ID: {userId}</div>
-
       <table className="w-full">
         <thead>
           <tr>
@@ -75,7 +95,6 @@ const Hello = () => {
           </tr>
         </tbody>
       </table>
-
       <div className="absolute bottom-0 left-0 w-full text-center">
         <span>
           We are using Node.js::
