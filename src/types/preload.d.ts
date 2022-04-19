@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 declare global {
   interface StringeeUtil {
     isWebRTCSupported(): boolean;
@@ -9,6 +10,21 @@ declare global {
     constructor();
     connect(accessToken: string): void;
     on(event: string, cb: (res: any) => void): void;
+  }
+
+  class StringeeCall2 {
+    fromNumber: string;
+    constructor(
+      stringeeClient: StringeeClient,
+      fromNumber: string,
+      toNumber: string,
+      isVideoCall: boolean
+    );
+    on(event: string, cb: (res: any) => void): void;
+    makeCall(cb: (res: any) => void): void;
+    answer(cb: (res: any) => void): void;
+    reject(cb: (res: any) => void): void;
+    hangup(cb: (res: any) => void): void;
   }
 
   interface Window {

@@ -42,38 +42,121 @@ export default class StringeeClientUtil {
     this.client.connect(accessToken);
   }
 
-  public init(): void {
-    this.client.on('connect', this.onConnectHandler);
+  public settingClientEvents(): void {
+    this.client.on('connect', () => {
+      console.log('connected');
+    });
 
-    // this.client.on('authen', this.onAuthenHandler);
+    this.client.on('disconnect', () => {
+      console.log('disconnected');
+    });
 
-    this.client.on('disconnect', this.onDisconnectHandler);
+    this.client.on('requestnewtoken', () => {
+      console.log(
+        '++++++++++++++ requestnewtoken; please get new access_token from YourServer and call client.connect(new_access_token)+++++++++'
+      );
+      // please get new access_token from YourServer and call:
+      // client.connect(new_access_token);
+    });
 
-    this.client.on('requestnewtoken', this.onRequestnewtokenHandler);
+    this.client.on('incomingcall2', (incomingCall: StringeeCall2) => {
+      console.log('incomingcall2', incomingCall);
+      const call = incomingCall;
+      StringeeClientUtil.settingCallEvents(incomingCall);
+
+      // eslint-disable-next-line no-restricted-globals
+      const answer = confirm(
+        `Incoming call from: ${incomingCall.fromNumber}, do you want to answer?`
+      );
+      if (answer) {
+        call.answer((res) => {
+          console.log('answer res', res);
+        });
+      } else {
+        call.reject((res) => {
+          console.log('reject res', res);
+        });
+      }
+    });
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  private onConnectHandler() {
-    console.log('connected');
-  }
+  public static settingCallEvents(call: StringeeCall2) {
+    call.on('addlocalstream', (stream) => {
+      console.log(
+        'addlocalstream, not processing with this event => process in event: addlocaltrack'
+      );
+    });
 
-  // eslint-disable-next-line class-methods-use-this
-  // private onAuthenHandler(res: any) {
-  // console.log('authen', res);
-  // setUserId(res.userId);
-  // }
+    call.on('addlocaltrack', (localtrack1) => {
+      console.log('addlocaltrack', localtrack1);
 
-  // eslint-disable-next-line class-methods-use-this
-  private onDisconnectHandler() {
-    console.log('disconnected');
-  }
+      const element = localtrack1.attach();
+      document
+        .getElementById('local_videos')
+        ?.childNodes.forEach((ele) => ele.remove());
+      document.getElementById('local_videos')?.appendChild(element);
+      element.style.height = '150px';
+      element.style.color = 'red';
+    });
 
-  // eslint-disable-next-line class-methods-use-this
-  private onRequestnewtokenHandler() {
-    console.log(
-      '++++++++++++++ requestnewtoken; please get new access_token from YourServer and call client.connect(new_access_token)+++++++++'
-    );
-    // please get new access_token from YourServer and call:
-    // client.connect(new_access_token);
+    call.on('addremotetrack', (track) => {
+      const element = track.attach();
+      document
+        .getElementById('remote_videos')
+        ?.childNodes.forEach((ele) => ele.remove());
+      document.getElementById('remote_videos')?.appendChild(element);
+      element.style.height = '150px';
+    });
+
+    call.on('removeremotetrack', (track) => {
+      track.detachAndRemove();
+    });
+
+    call.on('removelocaltrack', (track) => {
+      track.detachAndRemove();
+    });
+
+    call.on('signalingstate', (state) => {
+      console.log('signalingstate ', state);
+      if (state.code === 6) {
+        console.log(`$('#incomingcallBox').hide();`);
+      }
+
+      if (state.code === 6) {
+        console.log(`setCallStatus('Ended');`);
+        console.log(`onstop();`);
+      } else if (state.code === 3) {
+        console.log(`setCallStatus('Answered');`);
+        console.log(`test_stats();`);
+      } else if (state.code === 5) {
+        console.log(`setCallStatus('User busy');`);
+        console.log(`onstop();`);
+      }
+    });
+    call.on('mediastate', (state) => {
+      console.log('mediastate ', state);
+    });
+    call.on('otherdevice', (msg) => {
+      console.log('otherdevice ', msg);
+      if (msg.type === 'CALL2_STATE') {
+        if (msg.code === 200 || msg.code === 486) {
+          console.log(`$('#incomingcallBox').hide();`);
+        }
+      }
+    });
+    call.on('info', (info) => {
+      console.log('++++info ', info);
+    });
+
+    call.answer((res) => {
+      console.log('answer res', res);
+    });
+    call.reject((res) => {
+      console.log('reject res', res);
+    });
+
+    call.hangup((res) => {
+      console.log('hangup res', res);
+    });
   }
 }

@@ -18,7 +18,7 @@ const Hello = () => {
   }
 
   const stringeeClient = StringeeClientUtil.getInstance();
-  stringeeClient.init();
+  stringeeClient.settingClientEvents();
   stringeeClient.client.on('authen', (res: StringeeAuthenResponse) => {
     console.log('authen', res);
     setUserId(res.userId);
@@ -35,7 +35,7 @@ const Hello = () => {
 
     const remoteUserUuid = String(remoteUserId?.current?.value);
 
-    if (remoteUserUuid.length !== 36) {
+    if (remoteUserUuid.length < 36) {
       setMsgAlert(`Invalid UUID - ${remoteUserUuid.length} chars length`);
     }
 
@@ -45,7 +45,17 @@ const Hello = () => {
 
     remoteUserId?.current?.focus();
 
-    setMsgAlert('Implementing call to remote ID');
+    // setMsgAlert('Implementing call to remote ID');
+    const call = new StringeeCall2(
+      stringeeClient.client,
+      userId,
+      remoteUserUuid,
+      true
+    );
+    StringeeClientUtil.settingCallEvents(call);
+    call.makeCall((res: any) => {
+      console.log(`make call callback: ${JSON.stringify(res)}`);
+    });
   };
 
   return (
