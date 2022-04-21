@@ -1,7 +1,30 @@
-// type StringeeA = window.
-// const [StringeeClient] = Window;
+import { Dispatch, SetStateAction } from 'react';
+
+import type {
+  StringeeAuthenResponse,
+  StringeeSignalingState,
+} from 'types/Stringee';
 
 export default class StringeeClientUtil {
+  public static readonly SERVER_ADDRS = [
+    'wss://v1.stringee.com:6899/',
+    'wss://v2.stringee.com:6899/',
+  ];
+
+  private static readonly CALL_STATE_INIT = 0;
+
+  private static readonly CALL_STATE_CALLING = 1;
+
+  private static readonly CALL_STATE_RINGING = 2;
+
+  private static readonly CALL_STATE_ANSWERED = 3;
+
+  private static readonly CALL_STATE_CONNECTED = 4;
+
+  private static readonly CALL_STATE_BUSY = 5;
+
+  private static readonly CALL_STATE_ENDED = 6;
+
   private stringeeClient: null | StringeeClient = null;
 
   set client(client: StringeeClient) {
@@ -42,55 +65,65 @@ export default class StringeeClientUtil {
     this.client.connect(accessToken);
   }
 
-  public settingClientEvents(): void {
+  public settingClientEvents(
+    setUserId: Dispatch<SetStateAction<string>>,
+    setMsgAlert: Dispatch<SetStateAction<string>>
+  ): void {
     this.client.on('connect', () => {
-      console.log('connected');
+      console.log('++++++++++++++ connected');
+      // setMsgAlert('Connected');
+    });
+
+    this.client.on('authen', (res: StringeeAuthenResponse) => {
+      console.log('authen', res);
+      setUserId(res.userId);
     });
 
     this.client.on('disconnect', () => {
-      console.log('disconnected');
+      console.log('++++++++++++++ disconnected');
+      setMsgAlert('Discounted');
     });
 
     this.client.on('requestnewtoken', () => {
-      console.log(
-        '++++++++++++++ requestnewtoken; please get new access_token from YourServer and call client.connect(new_access_token)+++++++++'
-      );
-      // please get new access_token from YourServer and call:
-      // client.connect(new_access_token);
+      console.log('++++++++++++++ requestnewtoken+++++++++');
+      setMsgAlert('Request new token');
     });
 
     this.client.on('incomingcall2', (incomingCall: StringeeCall2) => {
       console.log('incomingcall2', incomingCall);
       const call = incomingCall;
-      StringeeClientUtil.settingCallEvents(incomingCall);
+      StringeeClientUtil.settingCallEvents(incomingCall, () => {});
 
-      // eslint-disable-next-line no-restricted-globals
-      const answer = confirm(
+      // eslint-disable-next-line no-restricted-globals,no-alert
+      const answer: boolean = confirm(
         `Incoming call from: ${incomingCall.fromNumber}, do you want to answer?`
       );
       if (answer) {
         call.answer((res) => {
-          console.log('answer res', res);
+          console.log('incomingcall2 :: answer res', res);
         });
       } else {
         call.reject((res) => {
-          console.log('reject res', res);
+          console.log('incomingcall2 :: reject res', res);
         });
       }
     });
   }
 
-  public static settingCallEvents(call: StringeeCall2) {
+  public static settingCallEvents(
+    call: StringeeCall2,
+    setMsgAlert: Dispatch<SetStateAction<string>>
+  ) {
     call.on('addlocalstream', (stream) => {
       console.log(
         'addlocalstream, not processing with this event => process in event: addlocaltrack'
       );
     });
 
-    call.on('addlocaltrack', (localtrack1) => {
-      console.log('addlocaltrack', localtrack1);
+    call.on('addlocaltrack', (track) => {
+      console.log('addlocaltrack', track);
 
-      const element = localtrack1.attach();
+      const element = track.attach();
       document
         .getElementById('local_videos')
         ?.childNodes.forEach((ele) => ele.remove());
@@ -116,20 +149,18 @@ export default class StringeeClientUtil {
       track.detachAndRemove();
     });
 
-    call.on('signalingstate', (state) => {
+    call.on('signalingstate', (state: StringeeSignalingState) => {
       console.log('signalingstate ', state);
-      if (state.code === 6) {
-        console.log(`$('#incomingcallBox').hide();`);
-      }
 
-      if (state.code === 6) {
-        console.log(`setCallStatus('Ended');`);
+      if (state.code === StringeeClientUtil.CALL_STATE_ENDED) {
+        console.log(`$('#incomingcallBox').hide();`);
+        // setMsgAlert('Ended');
         console.log(`onstop();`);
-      } else if (state.code === 3) {
-        console.log(`setCallStatus('Answered');`);
+      } else if (state.code === StringeeClientUtil.CALL_STATE_ANSWERED) {
+        // setMsgAlert('Answered');
         console.log(`test_stats();`);
-      } else if (state.code === 5) {
-        console.log(`setCallStatus('User busy');`);
+      } else if (state.code === StringeeClientUtil.CALL_STATE_BUSY) {
+        // setMsgAlert('User busy');
         console.log(`onstop();`);
       }
     });

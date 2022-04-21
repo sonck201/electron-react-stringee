@@ -22,3 +22,10 @@ export interface StringeeAuthenResponseIceServer {
   credential: string;
   username: string;
 }
+
+export interface StringeeSignalingState {
+  code: number;
+  reason: string;
+  sipCode: number;
+  sipReason: string;
+}

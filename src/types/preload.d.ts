@@ -4,11 +4,14 @@ declare global {
     isWebRTCSupported(): boolean;
     getActiveClientId(): null | string;
     getIOSVersion(): boolean | string;
+    version(): { version: string; build: string };
   }
 
   class StringeeClient {
-    constructor();
+    constructor(serverAddresses?: string[]);
     connect(accessToken: string): void;
+    disconnect(): void;
+    sendCustomMessage(userId: string, data: any, callback: () => void): void;
     on(event: string, cb: (res: any) => void): void;
   }
 
@@ -24,6 +27,7 @@ declare global {
     makeCall(cb: (res: any) => void): void;
     answer(cb: (res: any) => void): void;
     reject(cb: (res: any) => void): void;
+    ringing(cb: (res: any) => void): void;
     hangup(cb: (res: any) => void): void;
   }
 

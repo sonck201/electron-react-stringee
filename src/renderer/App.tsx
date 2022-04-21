@@ -1,13 +1,16 @@
-import { FormEvent, useRef, useState } from 'react';
+import React, { FormEvent, useContext, useRef, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 
 import icon from '../../assets/icon.svg';
-import type { StringeeAuthenResponse } from '../types/Stringee';
 import StringeeClientUtil from '../utils/Stringee';
+
+import { AppContextType } from 'types/app';
 
 const Hello = () => {
   const [msgAlert, setMsgAlert] = useState('');
   const [userId, setUserId] = useState(window.electron.ipcRenderer.userId);
+
+  const appContent = useContext();
 
   const remoteUserId = useRef<HTMLInputElement>(null);
 
@@ -18,11 +21,7 @@ const Hello = () => {
   }
 
   const stringeeClient = StringeeClientUtil.getInstance();
-  stringeeClient.settingClientEvents();
-  stringeeClient.client.on('authen', (res: StringeeAuthenResponse) => {
-    console.log('authen', res);
-    setUserId(res.userId);
-  });
+  stringeeClient.settingClientEvents(setUserId, setMsgAlert);
 
   const onCallHandler = (formEvent: FormEvent) => {
     formEvent.preventDefault();
@@ -52,9 +51,9 @@ const Hello = () => {
       remoteUserUuid,
       true
     );
-    StringeeClientUtil.settingCallEvents(call);
+    StringeeClientUtil.settingCallEvents(call, setMsgAlert);
     call.makeCall((res: any) => {
-      console.log(`make call callback: ${JSON.stringify(res)}`);
+      console.log(`make call callback:`, res);
     });
   };
 
@@ -118,17 +117,32 @@ const Hello = () => {
           Electron::
           <span id="electron-version">{versions.electron}</span>
         </span>
+        <span className="ml-5">
+          Stringee::
+          <span id="stringee-version">
+            {window.StringeeUtil.version().version} -{' '}
+            {window.StringeeUtil.version().build}
+          </span>
+        </span>
       </div>
     </>
   );
 };
 
+const initContext: AppContextType = {
+  userId: window.electron.ipcRenderer.userId,
+  msgAlert: '',
+};
+const AppContext = React.createContext(initContext);
+
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Hello />} />
-      </Routes>
-    </Router>
+    <AppContext.Provider value={initContext}>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Hello />} />
+        </Routes>
+      </Router>
+    </AppContext.Provider>
   );
 }
