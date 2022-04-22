@@ -12,20 +12,6 @@ export default class StringeeClientUtil {
     'wss://v2.stringee.com:6899/',
   ];
 
-  private static readonly CALL_STATE_INIT = 0;
-
-  private static readonly CALL_STATE_CALLING = 1;
-
-  private static readonly CALL_STATE_RINGING = 2;
-
-  private static readonly CALL_STATE_ANSWERED = 3;
-
-  private static readonly CALL_STATE_CONNECTED = 4;
-
-  private static readonly CALL_STATE_BUSY = 5;
-
-  private static readonly CALL_STATE_ENDED = 6;
-
   private userId: string = '...';
 
   private stringeeClient: null | StringeeClient = null;
