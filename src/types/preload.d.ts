@@ -55,6 +55,7 @@ declare global {
       stringeeEnv: {
         accessToken: string;
       };
+      isMediaAccessGranted: boolean;
     };
     StringeeUtil: StringeeUtil;
     StringeeClient: typeof StringeeClient;

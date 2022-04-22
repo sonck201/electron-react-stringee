@@ -16,7 +16,10 @@ const Hello = () => {
 
   const versions = window.electron.ipcRenderer.versions();
 
-  if (!StringeeClientUtil.isWebRTCSupported()) {
+  if (
+    !StringeeClientUtil.isWebRTCSupported() ||
+    !window.electron.isMediaAccessGranted
+  ) {
     return <>Your device does not support WebRTC</>;
   }
 

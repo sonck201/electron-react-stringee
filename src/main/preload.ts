@@ -1,4 +1,9 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import {
+  contextBridge,
+  ipcRenderer,
+  IpcRendererEvent,
+  systemPreferences,
+} from 'electron';
 import { v4 as uuidv4 } from 'uuid';
 
 import { getAccessToken } from '../libs/Stringee';
@@ -47,4 +52,7 @@ contextBridge.exposeInMainWorld('electron', {
   stringeeEnv: {
     accessToken: getAccessToken(userId),
   },
+  isMediaAccessGranted:
+    systemPreferences.getMediaAccessStatus('camera') === 'granted' &&
+    systemPreferences.getMediaAccessStatus('microphone') === 'granted',
 });

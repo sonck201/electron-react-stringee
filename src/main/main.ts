@@ -16,6 +16,7 @@ import {
   shell,
   ipcMain,
   BrowserWindowConstructorOptions,
+  systemPreferences,
 } from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
@@ -185,6 +186,9 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+systemPreferences.askForMediaAccess('microphone');
+systemPreferences.askForMediaAccess('camera');
 
 app
   .whenReady()
