@@ -6,6 +6,9 @@ import {
   MenuItemConstructorOptions,
 } from 'electron';
 
+// eslint-disable-next-line import/no-cycle
+import { createWindow } from './main';
+
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
   submenu?: DarwinMenuItemConstructorOptions[] | Menu;
@@ -80,6 +83,18 @@ export default class MenuBuilder {
           accelerator: 'Command+Q',
           click: () => {
             app.quit();
+          },
+        },
+      ],
+    };
+    const subMenuFile: DarwinMenuItemConstructorOptions = {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Window',
+          accelerator: 'Shift+Command+N',
+          click: () => {
+            createWindow();
           },
         },
       ],
@@ -189,7 +204,14 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [
+      subMenuAbout,
+      subMenuFile,
+      subMenuEdit,
+      subMenuView,
+      subMenuWindow,
+      subMenuHelp,
+    ];
   }
 
   buildDefaultTemplate() {
@@ -197,6 +219,13 @@ export default class MenuBuilder {
       {
         label: '&File',
         submenu: [
+          {
+            label: 'New Window',
+            accelerator: 'Shift+Ctrl+N',
+            click: () => {
+              createWindow();
+            },
+          },
           {
             label: '&Open',
             accelerator: 'Ctrl+O',

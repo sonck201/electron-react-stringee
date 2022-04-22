@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
+import '../../assets/js/stringee-web-sdk.min';
 
 import App from '../renderer/App';
 
@@ -12,6 +13,7 @@ describe('App', () => {
         on: () => () => {},
         once: () => {},
         versions: () => process.versions,
+        userId: '...',
       },
     };
   });
