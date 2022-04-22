@@ -1,16 +1,12 @@
-import React, { FormEvent, useContext, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 
 import icon from '../../assets/icon.svg';
 import StringeeClientUtil from '../utils/Stringee';
 
-import { AppContextType } from 'types/app';
-
 const Hello = () => {
   const [msgAlert, setMsgAlert] = useState('');
   const [userId, setUserId] = useState(window.electron.ipcRenderer.userId);
-
-  const appContent = useContext();
 
   const remoteUserId = useRef<HTMLInputElement>(null);
 
@@ -45,7 +41,7 @@ const Hello = () => {
     remoteUserId?.current?.focus();
 
     // setMsgAlert('Implementing call to remote ID');
-    const call = new StringeeCall2(
+    const call = new StringeeCall(
       stringeeClient.client,
       userId,
       remoteUserUuid,
@@ -96,10 +92,19 @@ const Hello = () => {
         <tbody>
           <tr>
             <td>
-              <div id="local_videos" className="h-[200px] w-[200px]" />
+              {/* <div id="local_videos" className="h-[200px] w-[200px]" /> */}
+              <video
+                id="localVideo"
+                autoPlay
+                muted
+                className="mx-auto w-[150px]"
+              />
             </td>
             <td>
-              <div id="remote_videos" className="h-[200px] w-[200px]" />
+              {/* <div id="remote_videos" className="h-[200px] w-[200px]" /> */}
+              <video id="remoteVideo" autoPlay className="mx-auto w-[150px]">
+                <track kind="captions" />
+              </video>
             </td>
           </tr>
         </tbody>
@@ -129,20 +134,12 @@ const Hello = () => {
   );
 };
 
-const initContext: AppContextType = {
-  userId: window.electron.ipcRenderer.userId,
-  msgAlert: '',
-};
-const AppContext = React.createContext(initContext);
-
 export default function App() {
   return (
-    <AppContext.Provider value={initContext}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Hello />} />
-        </Routes>
-      </Router>
-    </AppContext.Provider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Hello />} />
+      </Routes>
+    </Router>
   );
 }

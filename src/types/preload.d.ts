@@ -15,14 +15,16 @@ declare global {
     on(event: string, cb: (res: any) => void): void;
   }
 
-  class StringeeCall2 {
-    fromNumber: string;
+  class StringeeCall {
+    public fromNumber: string;
+
     constructor(
-      stringeeClient: StringeeClient,
+      client: StringeeClient,
       fromNumber: string,
       toNumber: string,
       isVideoCall: boolean
     );
+
     on(event: string, cb: (res: any) => void): void;
     makeCall(cb: (res: any) => void): void;
     answer(cb: (res: any) => void): void;
@@ -30,6 +32,8 @@ declare global {
     ringing(cb: (res: any) => void): void;
     hangup(cb: (res: any) => void): void;
   }
+
+  class StringeeCall2 extends StringeeCall {}
 
   interface Window {
     electron: {

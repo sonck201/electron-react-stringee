@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Dispatch, SetStateAction } from 'react';
 
 import type {
@@ -71,7 +72,6 @@ export default class StringeeClientUtil {
   ): void {
     this.client.on('connect', () => {
       console.log('++++++++++++++ connected');
-      // setMsgAlert('Connected');
     });
 
     this.client.on('authen', (res: StringeeAuthenResponse) => {
@@ -89,9 +89,9 @@ export default class StringeeClientUtil {
       setMsgAlert('Request new token');
     });
 
-    this.client.on('incomingcall2', (incomingCall: StringeeCall2) => {
-      console.log('incomingcall2', incomingCall);
-      const call = incomingCall;
+    this.client.on('incomingcall', (incomingCall: StringeeCall) => {
+      console.log('incomingcall', incomingCall);
+
       StringeeClientUtil.settingCallEvents(incomingCall, () => {});
 
       // eslint-disable-next-line no-restricted-globals,no-alert
@@ -99,95 +99,63 @@ export default class StringeeClientUtil {
         `Incoming call from: ${incomingCall.fromNumber}, do you want to answer?`
       );
       if (answer) {
-        call.answer((res) => {
-          console.log('incomingcall2 :: answer res', res);
+        incomingCall.answer((res) => {
+          console.log('incomingcall :: answer res', res);
         });
       } else {
-        call.reject((res) => {
-          console.log('incomingcall2 :: reject res', res);
+        incomingCall.reject((res) => {
+          console.log('incomingcall :: reject res', res);
         });
       }
     });
   }
 
   public static settingCallEvents(
-    call: StringeeCall2,
+    call: StringeeCall,
     setMsgAlert: Dispatch<SetStateAction<string>>
   ) {
     call.on('addlocalstream', (stream) => {
-      console.log(
-        'addlocalstream, not processing with this event => process in event: addlocaltrack'
-      );
+      // reset srcObject to work around minor bugs in Chrome and Edge.
+      console.log('addlocalstream', stream);
+      const localVideo =
+        document.querySelector<HTMLVideoElement>('#localVideo');
+      localVideo!.srcObject = null;
+      localVideo!.srcObject = stream;
     });
 
-    call.on('addlocaltrack', (track) => {
-      console.log('addlocaltrack', track);
-
-      const element = track.attach();
-      document
-        .getElementById('local_videos')
-        ?.childNodes.forEach((ele) => ele.remove());
-      document.getElementById('local_videos')?.appendChild(element);
-      element.style.height = '150px';
-      element.style.color = 'red';
+    call.on('addremotestream', (stream) => {
+      console.log('addremotestream', stream);
+      const remoteVideo =
+        document.querySelector<HTMLVideoElement>('#remoteVideo');
+      remoteVideo!.srcObject = null;
+      remoteVideo!.srcObject = stream;
     });
 
-    call.on('addremotetrack', (track) => {
-      const element = track.attach();
-      document
-        .getElementById('remote_videos')
-        ?.childNodes.forEach((ele) => ele.remove());
-      document.getElementById('remote_videos')?.appendChild(element);
-      element.style.height = '150px';
-    });
-
-    call.on('removeremotetrack', (track) => {
-      track.detachAndRemove();
-    });
-
-    call.on('removelocaltrack', (track) => {
-      track.detachAndRemove();
+    call.on('error', (info) => {
+      console.log(`on error: ${JSON.stringify(info)}`);
+      setMsgAlert(`Error: ${JSON.stringify(info)}`);
     });
 
     call.on('signalingstate', (state: StringeeSignalingState) => {
       console.log('signalingstate ', state);
-
-      if (state.code === StringeeClientUtil.CALL_STATE_ENDED) {
-        console.log(`$('#incomingcallBox').hide();`);
-        // setMsgAlert('Ended');
-        console.log(`onstop();`);
-      } else if (state.code === StringeeClientUtil.CALL_STATE_ANSWERED) {
-        // setMsgAlert('Answered');
-        console.log(`test_stats();`);
-      } else if (state.code === StringeeClientUtil.CALL_STATE_BUSY) {
-        // setMsgAlert('User busy');
-        console.log(`onstop();`);
-      }
     });
+
     call.on('mediastate', (state) => {
       console.log('mediastate ', state);
     });
-    call.on('otherdevice', (msg) => {
-      console.log('otherdevice ', msg);
-      if (msg.type === 'CALL2_STATE') {
-        if (msg.code === 200 || msg.code === 486) {
-          console.log(`$('#incomingcallBox').hide();`);
-        }
-      }
-    });
+
     call.on('info', (info) => {
       console.log('++++info ', info);
     });
 
-    call.answer((res) => {
-      console.log('answer res', res);
-    });
-    call.reject((res) => {
-      console.log('reject res', res);
-    });
-
-    call.hangup((res) => {
-      console.log('hangup res', res);
+    call.on('otherdevice', (res) => {
+      console.log('otherdevice ', res);
+      if (
+        (res.type === 'CALL_STATE' && res.code >= 200) ||
+        res.type === 'CALL_END'
+      ) {
+        console.log(`$('#incoming-call-div').hide(); && callEnded();`);
+      }
     });
   }
 }
