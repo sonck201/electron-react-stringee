@@ -26,7 +26,15 @@ export default class StringeeClientUtil {
 
   private static readonly CALL_STATE_ENDED = 6;
 
+  private userId: string = '...';
+
   private stringeeClient: null | StringeeClient = null;
+
+  public setUserId: null | Dispatch<SetStateAction<string>> = null;
+
+  public setMsgAlert: null | Dispatch<SetStateAction<string>> = null;
+
+  public setLog: null | Dispatch<SetStateAction<string>> = null;
 
   set client(client: StringeeClient) {
     this.stringeeClient = client;
@@ -40,8 +48,12 @@ export default class StringeeClientUtil {
     return this.stringeeClient;
   }
 
-  public static getInstance(client?: StringeeClient) {
-    const stringeeClientInstance = new StringeeClientUtil();
+  constructor(userId: string) {
+    this.userId = userId;
+  }
+
+  public static getInstance(client?: StringeeClient, userId = '') {
+    const stringeeClientInstance = new StringeeClientUtil(userId);
 
     if (client && client instanceof StringeeClient) {
       stringeeClientInstance.client = client;
@@ -66,33 +78,32 @@ export default class StringeeClientUtil {
     this.client.connect(accessToken);
   }
 
-  public settingClientEvents(
-    setUserId: Dispatch<SetStateAction<string>>,
-    setMsgAlert: Dispatch<SetStateAction<string>>
-  ): void {
+  public settingClientEvents(): void {
     this.client.on('connect', () => {
       console.log('++++++++++++++ connected');
+      // this.setMsgAlert!('Connected');
     });
 
     this.client.on('authen', (res: StringeeAuthenResponse) => {
       console.log('authen', res);
-      setUserId(res.userId);
+      this.setUserId!(res.userId);
+      // this.setLog!(JSON.stringify(res));
     });
 
     this.client.on('disconnect', () => {
       console.log('++++++++++++++ disconnected');
-      setMsgAlert('Discounted');
+      this.setMsgAlert!('Disconnected');
     });
 
     this.client.on('requestnewtoken', () => {
       console.log('++++++++++++++ requestnewtoken+++++++++');
-      setMsgAlert('Request new token');
+      this.setMsgAlert!('Request new token');
     });
 
     this.client.on('incomingcall', (incomingCall: StringeeCall) => {
       console.log('incomingcall', incomingCall);
 
-      StringeeClientUtil.settingCallEvents(incomingCall, () => {});
+      this.settingCallEvents(incomingCall);
 
       // eslint-disable-next-line no-restricted-globals,no-alert
       const answer: boolean = confirm(
@@ -110,10 +121,15 @@ export default class StringeeClientUtil {
     });
   }
 
-  public static settingCallEvents(
-    call: StringeeCall,
-    setMsgAlert: Dispatch<SetStateAction<string>>
-  ) {
+  public createCall(toNumber: string): StringeeCall {
+    const call = new StringeeCall(this.client, this.userId, toNumber, true);
+
+    this.settingCallEvents(call);
+
+    return call;
+  }
+
+  public settingCallEvents(call: StringeeCall) {
     call.on('addlocalstream', (stream) => {
       // reset srcObject to work around minor bugs in Chrome and Edge.
       console.log('addlocalstream', stream);
@@ -133,7 +149,7 @@ export default class StringeeClientUtil {
 
     call.on('error', (info) => {
       console.log(`on error: ${JSON.stringify(info)}`);
-      setMsgAlert(`Error: ${JSON.stringify(info)}`);
+      this.setMsgAlert!(`Error: ${JSON.stringify(info)}`);
     });
 
     call.on('signalingstate', (state: StringeeSignalingState) => {

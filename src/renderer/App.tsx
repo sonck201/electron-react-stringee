@@ -4,7 +4,11 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import StringeeClientUtil from '../utils/Stringee';
 
+let stringeeClient: StringeeClientUtil;
+let call: StringeeCall;
+
 const Hello = () => {
+  const [log, setLog] = useState('');
   const [msgAlert, setMsgAlert] = useState('');
   const [userId, setUserId] = useState(window.electron.ipcRenderer.userId);
 
@@ -16,8 +20,11 @@ const Hello = () => {
     return <>Your device does not support WebRTC</>;
   }
 
-  const stringeeClient = StringeeClientUtil.getInstance();
-  stringeeClient.settingClientEvents(setUserId, setMsgAlert);
+  stringeeClient = StringeeClientUtil.getInstance();
+  stringeeClient.setLog = setLog;
+  stringeeClient.setUserId = setUserId;
+  stringeeClient.setMsgAlert = setMsgAlert;
+  stringeeClient.settingClientEvents();
 
   const onCallHandler = (formEvent: FormEvent) => {
     formEvent.preventDefault();
@@ -41,13 +48,7 @@ const Hello = () => {
     remoteUserId?.current?.focus();
 
     // setMsgAlert('Implementing call to remote ID');
-    const call = new StringeeCall(
-      stringeeClient.client,
-      userId,
-      remoteUserUuid,
-      true
-    );
-    StringeeClientUtil.settingCallEvents(call, setMsgAlert);
+    call = stringeeClient.createCall(remoteUserUuid);
     call.makeCall((res: any) => {
       console.log(`make call callback:`, res);
     });
@@ -81,7 +82,15 @@ const Hello = () => {
           Call
         </button>
       </form>
+
+      {log && (
+        <pre>
+          <code>{log}</code>
+        </pre>
+      )}
+
       <div className="text-center mt-5">User ID: {userId}</div>
+
       <table className="w-full">
         <thead>
           <tr>

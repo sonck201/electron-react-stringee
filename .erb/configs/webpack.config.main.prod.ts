@@ -4,6 +4,7 @@
 
 import path from 'path';
 
+import dotenv from 'dotenv';
 import TerserPlugin from 'terser-webpack-plugin';
 import webpack from 'webpack';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
@@ -68,6 +69,7 @@ const configuration: webpack.Configuration = {
       NODE_ENV: 'production',
       DEBUG_PROD: false,
       START_MINIMIZED: false,
+      ...dotenv.config().parsed,
     }),
   ],
 
